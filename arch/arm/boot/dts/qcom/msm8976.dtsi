@@ -25,6 +25,14 @@
 		bootargs = "boot_cpus=0,1,2,3,4,5 sched_enable_hmp=1";
 	};
 
+	reserved_memory: reserved-memory {
+
+		ramoops@9ff00000 {
+			compatible = "ramoops";
+			reg = <0x0 0x9ff00000 0x0 0x300000>;
+		};
+	};
+
 	firmware: firmware {
                 android {
                         compatible = "android,firmware";
