@@ -3,7 +3,7 @@
 properties() { '
 kernel.string=generic
 do.devicecheck=0
-do.modules=0
+do.modules=1
 do.systemless=0
 do.cleanup=1
 do.cleanuponabort=0

@@ -29,6 +29,24 @@ build_64() {
 				-j$(nproc --all) || exit
 }
 
+mod() {
+	echo -e "Building Modules...\n"
+	[ -d "KERNEL_OUT/modules" ] && rm -rf KERNEL_OUT/modules || mkdir -p KERNEL_OUT/modules
+	PATH="$tcdir/los-4.9-64/bin:$tcdir/los-4.9-32/bin:${PATH}" \
+		make    O=KERNEL_OUT \
+				ARCH=arm64 \
+				CC="ccache $tcdir/los-4.9-64/bin/aarch64-linux-android-gcc" \
+				CROSS_COMPILE=aarch64-linux-android- \
+				CROSS_COMPILE_ARM32=arm-linux-androideabi- \
+				CONFIG_NO_ERROR_ON_MISMATCH=y \
+				CONFIG_DEBUG_SECTION_MISMATCH=y \
+				INSTALL_MOD_PATH=modules \
+				INSTALL_MOD_STRIP=1 \
+				modules_install || exit
+	find $ak_dir/modules/system/lib/modules -iname "*.ko" -delete
+	find KERNEL_OUT/modules -iname "*.ko" -exec cp {} $ak_dir/modules/system/lib/modules/ \;
+}
+
 post() {
 	[ -d $ak_dir ] && echo -e "\nAnykernel 3 Present.\n" \
 	|| mkdir -p $ak_dir \
@@ -38,11 +56,11 @@ post() {
 
 	[ -f KERNEL_OUT/arch/arm64/boot/zImage-dtb ] && cp KERNEL_OUT/arch/arm64/boot/zImage-dtb $ak_dir
 
-	( cd $ak_dir; zip -r9 ../../KERNEL_OUT/${CFGNAME/_defconfig/}_`date +%d\.%m\.%Y_%H\:%M\:%S`.zip . -x '*.git*' '*modules*' '*patch*' '*ramdisk*' 'LICENSE' 'README.md' )
+	( cd $ak_dir; zip -r9 ../../KERNEL_OUT/${CFGNAME/_defconfig/}_`date +%d\.%m\.%Y_%H\:%M\:%S`.zip . -x '*.git*' '*patch*' '*ramdisk*' 'LICENSE' 'README.md' )
 
 	BUILD_END=$(date +"%s")
 	DIFF=$(($BUILD_END - $BUILD_START))
 	echo -e "\nBuild completed in $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds."
 }
 
-echo -e "Setting Config...\n" && make O=KERNEL_OUT ARCH=arm64 $CFGNAME && build_64 && post
+echo -e "Setting Config...\n" && make O=KERNEL_OUT ARCH=arm64 $CFGNAME && build_64 && mod && post
